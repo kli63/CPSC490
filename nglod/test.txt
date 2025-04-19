@@ -1,0 +1,22 @@
+pip install tinyobjloader==2.0.0rc7
+
+# Uninstall current PyTorch
+pip uninstall torch torchvision torchaudio -y
+
+# Install PyTorch with CUDA 12.1 support (closest stable version to 12.3)
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu121
+
+# Set CUDA_HOME to your CUDA 12.3 installation
+export CUDA_HOME=/usr/local/cuda-12.3
+
+# Try building again
+chmod +x build_ext.sh && ./build_ext.sh
+
+python app/sdf_renderer.py \
+    --net OctreeSDF \
+    --num-lods 5 \
+    --pretrained _results/models/armadillo.pth \
+    --render-res 1280 720 \
+    --shading-mode matcap \
+    --lod 4 \
+    --export armadillo.npz

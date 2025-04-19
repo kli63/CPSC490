@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Large binary files
+*.a
+*.so
+*.dylib
+*.dll
+*.lib
+*.tar
+*.gz
+*.zip
+*.deb
+*.whl
+*.pth
+*.npz
+*.bin
+*.pdb
+*.7z
+*.jar
+*.war
+*.ear
+*.aar
+*.ipa
+*.apk
+
+# libtorch
+nglod/sol-renderer/third-party/libtorch/
+
+# Directories that might contain large files
+nglod/sol-renderer/build/
+nglod/sol-renderer/fixed_build/
+shap-e/shap-e-env/
