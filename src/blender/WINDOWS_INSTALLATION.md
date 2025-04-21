@@ -52,11 +52,11 @@ The instructions below focus on the recommended Direct WSL version.
 In the add-on preferences, set:
 
 1. **WSL Python Path**: The full path to your Python executable in WSL
-   - Example: `/home/kli63/miniconda3/envs/cpsc490_env/bin/python`
+   - Example: `/home/username/miniconda3/envs/cpsc490_env/bin/python`
    - This must be exactly your username and path in WSL, not "username"
 
 2. **WSL Converter Path**: The full path to the wsl_converter.py script in your project
-   - Example: `/home/kli63/dev/CPSC490/src/blender/wsl_converter.py`
+   - Example: `/home/username/dev/CPSC490/src/blender/wsl_converter.py`
    - This must be exactly your username and path in WSL, not "username"
 
 3. **Temporary Folder**: A Windows folder to use for temporary files
