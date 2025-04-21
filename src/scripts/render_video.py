@@ -26,8 +26,8 @@ def main():
     parser.add_argument('--cam-radius', type=float, default=4.0, help='Camera distance from object')
     parser.add_argument('--temp-dir', default='_temp_render', help='Temporary directory for frames')
     parser.add_argument('--net', default='OctreeSDF', help='Network architecture (OctreeSDF, etc.)')
-    parser.add_argument('--feature-dim', type=int, default=None, help='Feature dimension used in training')
-    parser.add_argument('--num-lods', type=int, default=None, help='Number of LODs used in training')
+    parser.add_argument('--feature-dim', type=int, default=32, help='Feature dimension used in training (default: 32)')
+    parser.add_argument('--num-lods', type=int, default=5, help='Number of LODs used in training (default: 5)')
     args = parser.parse_args()
     
     # Generate video

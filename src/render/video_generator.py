@@ -50,6 +50,53 @@ def generate_rotation_video(model_path,
     if not renderer_path.exists():
         raise FileNotFoundError(f"Error: Renderer not found at {renderer_path}")
     
+    # Auto-detect model parameters if they're not provided
+    if feature_dim is None or num_lods is None:
+        try:
+            import torch
+            model_state = torch.load(model_path)
+            
+            # Check if this is a state dict
+            if isinstance(model_state, dict):
+                # Auto-detect feature_dim from model
+                if feature_dim is None:
+                    for key in model_state.keys():
+                        if 'features.0.fm' in key:
+                            # Get feature dimension from tensor shape
+                            feature_dim = model_state[key].shape[1]
+                            print(f"Auto-detected feature_dim={feature_dim} from model")
+                            break
+                    
+                    # Use default if not found
+                    if feature_dim is None:
+                        feature_dim = 32
+                        print(f"Using default feature_dim={feature_dim}")
+                
+                # Auto-detect num_lods from model
+                if num_lods is None:
+                    # Count the number of feature modules
+                    feature_count = 0
+                    for key in model_state.keys():
+                        if 'features.' in key and '.fm' in key:
+                            feature_idx = int(key.split('.')[1])
+                            feature_count = max(feature_count, feature_idx + 1)
+                    
+                    if feature_count > 0:
+                        num_lods = feature_count
+                        print(f"Auto-detected num_lods={num_lods} from model")
+                    else:
+                        num_lods = 5
+                        print(f"Using default num_lods={num_lods}")
+        except Exception as e:
+            print(f"Could not auto-detect model parameters: {e}")
+            # Set defaults if auto-detection fails
+            if feature_dim is None:
+                feature_dim = 32
+                print(f"Using default feature_dim={feature_dim}")
+            if num_lods is None:
+                num_lods = 5
+                print(f"Using default num_lods={num_lods}")
+    
     # Generate rotation frames
     print(f"Generating {frames} rotation frames around the {rotation_axis}-axis...")
     
@@ -61,18 +108,49 @@ def generate_rotation_video(model_path,
         "--tracer", "SphereTracer",
         "--img-dir", str(temp_dir),
         "--r360",  # Enable rotation rendering
-        "--nb-poses", str(frames)  # Number of poses to render
+        "--nb-poses", str(frames),  # Number of poses to render
+        "--feature-dim", str(feature_dim),  # Always include feature_dim
+        "--num-lods", str(num_lods)   # Always include num_lods
     ]
-    
-    # Add optional parameters if specified
-    if feature_dim:
-        cmd.extend(["--feature-dim", str(feature_dim)])
-    if num_lods:
-        cmd.extend(["--num-lods", str(num_lods)])
     
     # Run the renderer to generate all frames
     try:
-        subprocess.run(cmd, check=True)
+        process = subprocess.Popen(
+            cmd, 
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True
+        )
+        
+        # Capture output to look for specific error patterns
+        output = []
+        for line in iter(process.stdout.readline, ''):
+            print(line.strip())
+            output.append(line.strip())
+        
+        process.stdout.close()
+        return_code = process.wait()
+        
+        if return_code != 0:
+            # Check for model loading error
+            error_message = "\n".join(output)
+            if "Error(s) in loading state_dict" in error_message and "Unexpected key(s) in state_dict" in error_message:
+                print("\n⚠️ ERROR: Model parameter mismatch detected!")
+                print("Try using different --feature-dim and --num-lods values to match the trained model.")
+                print(f"Current values: feature_dim={feature_dim}, num_lods={num_lods}")
+                
+                # Extract keys from error message to suggest parameters
+                import re
+                feature_keys = re.findall(r'features\.(\d+)\.fm', error_message)
+                if feature_keys:
+                    max_lod = max([int(k) for k in feature_keys]) + 1
+                    print(f"Suggested parameters based on error: --num-lods={max_lod}")
+                
+                print("\nExample command:")
+                print(f"./src/scripts/render_video.py {model_path} --name {name} --frames {frames} --feature-dim 32 --num-lods 5")
+            
+            return False
+        
         print("Rendering completed successfully!")
     except subprocess.CalledProcessError as e:
         print(f"Error running renderer: {e}")
@@ -144,6 +222,53 @@ def generate_sphere_view_video(model_path,
     if not renderer_path.exists():
         raise FileNotFoundError(f"Error: Renderer not found at {renderer_path}")
     
+    # Auto-detect model parameters if they're not provided
+    if feature_dim is None or num_lods is None:
+        try:
+            import torch
+            model_state = torch.load(model_path)
+            
+            # Check if this is a state dict
+            if isinstance(model_state, dict):
+                # Auto-detect feature_dim from model
+                if feature_dim is None:
+                    for key in model_state.keys():
+                        if 'features.0.fm' in key:
+                            # Get feature dimension from tensor shape
+                            feature_dim = model_state[key].shape[1]
+                            print(f"Auto-detected feature_dim={feature_dim} from model")
+                            break
+                    
+                    # Use default if not found
+                    if feature_dim is None:
+                        feature_dim = 32
+                        print(f"Using default feature_dim={feature_dim}")
+                
+                # Auto-detect num_lods from model
+                if num_lods is None:
+                    # Count the number of feature modules
+                    feature_count = 0
+                    for key in model_state.keys():
+                        if 'features.' in key and '.fm' in key:
+                            feature_idx = int(key.split('.')[1])
+                            feature_count = max(feature_count, feature_idx + 1)
+                    
+                    if feature_count > 0:
+                        num_lods = feature_count
+                        print(f"Auto-detected num_lods={num_lods} from model")
+                    else:
+                        num_lods = 5
+                        print(f"Using default num_lods={num_lods}")
+        except Exception as e:
+            print(f"Could not auto-detect model parameters: {e}")
+            # Set defaults if auto-detection fails
+            if feature_dim is None:
+                feature_dim = 32
+                print(f"Using default feature_dim={feature_dim}")
+            if num_lods is None:
+                num_lods = 5
+                print(f"Using default num_lods={num_lods}")
+    
     # Generate sphere viewpoint frames
     print(f"Generating {poses} viewpoints distributed on a sphere...")
     
@@ -156,18 +281,49 @@ def generate_sphere_view_video(model_path,
         "--img-dir", str(temp_dir),
         "--rsphere",  # Enable sphere rendering
         "--nb-poses", str(poses),  # Number of poses to render
-        "--cam-radius", str(cam_radius)  # Camera distance
+        "--cam-radius", str(cam_radius),  # Camera distance
+        "--feature-dim", str(feature_dim),  # Always include feature_dim
+        "--num-lods", str(num_lods)   # Always include num_lods
     ]
-    
-    # Add optional parameters if specified
-    if feature_dim:
-        cmd.extend(["--feature-dim", str(feature_dim)])
-    if num_lods:
-        cmd.extend(["--num-lods", str(num_lods)])
     
     # Run the renderer to generate all frames
     try:
-        subprocess.run(cmd, check=True)
+        process = subprocess.Popen(
+            cmd, 
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True
+        )
+        
+        # Capture output to look for specific error patterns
+        output = []
+        for line in iter(process.stdout.readline, ''):
+            print(line.strip())
+            output.append(line.strip())
+        
+        process.stdout.close()
+        return_code = process.wait()
+        
+        if return_code != 0:
+            # Check for model loading error
+            error_message = "\n".join(output)
+            if "Error(s) in loading state_dict" in error_message and "Unexpected key(s) in state_dict" in error_message:
+                print("\n⚠️ ERROR: Model parameter mismatch detected!")
+                print("Try using different --feature-dim and --num-lods values to match the trained model.")
+                print(f"Current values: feature_dim={feature_dim}, num_lods={num_lods}")
+                
+                # Extract keys from error message to suggest parameters
+                import re
+                feature_keys = re.findall(r'features\.(\d+)\.fm', error_message)
+                if feature_keys:
+                    max_lod = max([int(k) for k in feature_keys]) + 1
+                    print(f"Suggested parameters based on error: --num-lods={max_lod}")
+                
+                print("\nExample command:")
+                print(f"./src/scripts/render_sphere_views.py {model_path} --name {name} --poses {poses} --feature-dim 32 --num-lods 5")
+            
+            return False
+        
         print("Rendering completed successfully!")
     except subprocess.CalledProcessError as e:
         print(f"Error running renderer: {e}")
