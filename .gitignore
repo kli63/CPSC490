@@ -49,3 +49,22 @@ nglod/sol-renderer/third-party/libtorch/
 nglod/sol-renderer/build/
 nglod/sol-renderer/fixed_build/
 shap-e/shap-e-env/
+
+# Result directories
+_results/
+nglod/sdf-net/_results/
+output/
+
+# Model cache
+shap_e_model_cache/
+
+# Generated meshes
+*.obj
+
+# Training logs
+*.tfevents.*
+
+# Rendered images
+*.png
+*.jpg
+*.exr

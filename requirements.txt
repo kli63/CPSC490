@@ -1,0 +1,31 @@
+# Unified requirements for CPSC490 project
+# Compatible with NGLOD and Shap-E
+
+# Core PyTorch - install via pip with CUDA support:
+# pip install torch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 --index-url https://download.pytorch.org/whl/cu118
+
+# NGLOD requirements
+matplotlib
+tensorboard
+pybind11
+trimesh>=3.0
+tqdm
+Pillow
+scipy
+scikit-image
+moviepy
+plyfile
+polyscope
+pyexr
+openexr
+einops
+
+# Shap-E requirements
+filelock
+fire
+humanize
+requests
+blobfile
+numpy
+# CLIP from GitHub:
+# pip install git+https://github.com/openai/CLIP.git
