@@ -61,6 +61,10 @@ def main():
     nglod_render_group.add_argument('--render-height', type=int, default=720, help='Render height')
     nglod_render_group.add_argument('--shading-mode', type=str, default='matcap', help='Shading mode')
     nglod_render_group.add_argument('--lod', type=int, default=4, help='Specific LOD level to render')
+    nglod_render_group.add_argument('--camera-view', choices=['front', 'top', 'side', 'diagonal', 'custom'], 
+                                  default='diagonal', help='Camera view perspective (diagonal is default for better object visibility)')
+    nglod_render_group.add_argument('--custom-camera-origin', type=float, nargs=3, default=None, 
+                                  help='Custom camera origin as 3 float values (x, y, z)')
     nglod_render_group.add_argument('--export-model', action='store_true', help='Export model to NPZ format')
     
     args = parser.parse_args()

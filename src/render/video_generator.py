@@ -27,7 +27,9 @@ def generate_rotation_video(model_path,
                           net="OctreeSDF",
                           feature_dim=None,
                           num_lods=None,
-                          use_legacy_output=False):
+                          use_legacy_output=False,
+                          camera_view="angle",
+                          custom_camera_origin=None):
     """Generate a video showing a 360° rotation of the model."""
     
     # Get NGLOD path
@@ -100,6 +102,20 @@ def generate_rotation_video(model_path,
     # Generate rotation frames
     print(f"Generating {frames} rotation frames around the {rotation_axis}-axis...")
     
+    # Define camera origin based on selected view
+    camera_origins = {
+        "front": [0, 0, cam_radius],          # Front view (z-axis)
+        "top": [0, cam_radius, 0],            # Top-down view (y-axis)
+        "side": [cam_radius, 0, 0],           # Side view (x-axis)
+        "diagonal": [-cam_radius/1.732, cam_radius/1.732, -cam_radius/1.732],  # Diagonal view (3/4 view)
+        "custom": custom_camera_origin if custom_camera_origin else [-cam_radius/1.732, cam_radius/1.732, -cam_radius/1.732]
+    }
+    
+    # Choose the camera origin based on the view option
+    selected_origin = camera_origins.get(camera_view, camera_origins["diagonal"])
+    
+    print(f"Using camera view: {camera_view} at position {selected_origin}")
+    
     # Command parameters
     cmd = [
         "python", str(renderer_path),
@@ -110,7 +126,8 @@ def generate_rotation_video(model_path,
         "--r360",  # Enable rotation rendering
         "--nb-poses", str(frames),  # Number of poses to render
         "--feature-dim", str(feature_dim),  # Always include feature_dim
-        "--num-lods", str(num_lods)   # Always include num_lods
+        "--num-lods", str(num_lods),   # Always include num_lods
+        "--camera-origin", str(selected_origin[0]), str(selected_origin[1]), str(selected_origin[2])
     ]
     
     # Run the renderer to generate all frames
@@ -199,7 +216,9 @@ def generate_sphere_view_video(model_path,
                              net="OctreeSDF",
                              feature_dim=None,
                              num_lods=None,
-                             use_legacy_output=False):
+                             use_legacy_output=False,
+                             camera_view="angle",
+                             custom_camera_origin=None):
     """Generate a video showing views from around a sphere."""
     
     # Get NGLOD path
@@ -272,6 +291,20 @@ def generate_sphere_view_video(model_path,
     # Generate sphere viewpoint frames
     print(f"Generating {poses} viewpoints distributed on a sphere...")
     
+    # Define camera origin based on selected view - this affects starting point for sphere view
+    camera_origins = {
+        "front": [0, 0, cam_radius],          # Front view (z-axis)
+        "top": [0, cam_radius, 0],            # Top-down view (y-axis)
+        "side": [cam_radius, 0, 0],           # Side view (x-axis)
+        "diagonal": [-cam_radius/1.732, cam_radius/1.732, -cam_radius/1.732],  # Diagonal view (3/4 view)
+        "custom": custom_camera_origin if custom_camera_origin else [-cam_radius/1.732, cam_radius/1.732, -cam_radius/1.732]
+    }
+    
+    # Choose the camera origin based on the view option
+    selected_origin = camera_origins.get(camera_view, camera_origins["diagonal"])
+    
+    print(f"Using camera view: {camera_view} at initial position {selected_origin}")
+    
     # Command parameters
     cmd = [
         "python", str(renderer_path),
@@ -283,7 +316,8 @@ def generate_sphere_view_video(model_path,
         "--nb-poses", str(poses),  # Number of poses to render
         "--cam-radius", str(cam_radius),  # Camera distance
         "--feature-dim", str(feature_dim),  # Always include feature_dim
-        "--num-lods", str(num_lods)   # Always include num_lods
+        "--num-lods", str(num_lods),   # Always include num_lods
+        "--camera-origin", str(selected_origin[0]), str(selected_origin[1]), str(selected_origin[2])
     ]
     
     # Run the renderer to generate all frames

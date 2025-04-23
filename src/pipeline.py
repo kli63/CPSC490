@@ -253,7 +253,9 @@ class Pipeline:
                   lod: Optional[int] = 4,
                   feature_dim: Optional[int] = None,
                   export_model: bool = False,
-                  use_legacy_output: bool = False) -> bool:
+                  use_legacy_output: bool = False,
+                  camera_view: str = "front",
+                  custom_camera_origin: Optional[List[float]] = None) -> bool:
         """Render the trained LOD model."""
         print_header(f"Rendering LOD Model: {os.path.basename(model_path)}")
         
@@ -276,6 +278,20 @@ class Pipeline:
             # Make sure the model path is absolute
             model_path_abs = os.path.abspath(model_path)
             
+            # Define camera origin based on selected view
+            camera_origins = {
+                "front": [0, 0, 3.5],          # Front view (z-axis)
+                "top": [0, 3.5, 0],            # Top-down view (y-axis)
+                "side": [3.5, 0, 0],           # Side view (x-axis)
+                "diagonal": [-2.5, 2.5, -2.5], # Diagonal view (3/4 view)
+                "custom": custom_camera_origin if custom_camera_origin else [-2.5, 2.5, -2.5]
+            }
+            
+            # Choose the camera origin based on the view option
+            selected_origin = camera_origins.get(camera_view, camera_origins["diagonal"])
+            
+            print(f"Using camera view: {camera_view} at position {selected_origin}")
+            
             cmd = [
                 sys.executable,
                 os.path.join(NGLOD_PATH, "app", "sdf_renderer.py"),
@@ -284,7 +300,8 @@ class Pipeline:
                 "--pretrained", model_path_abs,
                 "--render-res", str(render_width), str(render_height),
                 "--shading-mode", shading_mode,
-                "--matcap-path", os.path.join(NGLOD_PATH, "data/matcap/green.png")
+                "--matcap-path", os.path.join(NGLOD_PATH, "data/matcap/green.png"),
+                "--camera-origin", str(selected_origin[0]), str(selected_origin[1]), str(selected_origin[2])
             ]
             
             if lod is not None:
@@ -322,22 +339,29 @@ class Pipeline:
             # Check if the render was successful
             rgb_path = os.path.join(output_dir, f"{exp_name}_rgb.png")
             
-            # Also check the legacy location if using unified output
-            if not use_legacy_output:
-                legacy_rgb_path = os.path.join(NGLOD_PATH, "_results", "render_app", "imgs", exp_name, f"{exp_name}_rgb.png")
-                
-                # If the render appears in the legacy location but not the unified one, copy it
-                if not os.path.exists(rgb_path) and os.path.exists(legacy_rgb_path):
-                    import shutil
-                    print(f"Render found in legacy location, copying to unified location")
+            # Always check the legacy location and copy files if needed
+            import shutil
+            legacy_rgb_path = os.path.join(NGLOD_PATH, "_results", "render_app", "imgs", exp_name, f"{exp_name}_rgb.png")
+            legacy_still_path = os.path.join(NGLOD_PATH, "_results", "render_app", "imgs", exp_name, f"{exp_name}_rgb.png")
+            
+            # The renderer always outputs to the legacy location due to how it's coded
+            # We need to check this location and copy to the unified structure
+            if os.path.exists(legacy_still_path):
+                if not use_legacy_output:  # Only copy if we're using unified output
+                    print(f"Copying renders from legacy location to unified location")
                     os.makedirs(output_dir, exist_ok=True)
                     
                     # Copy all render files (rgb, normal, hit, depth)
                     legacy_dir = os.path.join(NGLOD_PATH, "_results", "render_app", "imgs", exp_name)
                     for filename in os.listdir(legacy_dir):
-                        if filename.startswith(exp_name):
-                            shutil.copy2(os.path.join(legacy_dir, filename), os.path.join(output_dir, filename))
-                            
+                        if filename.startswith(exp_name) and filename.endswith((".png", ".jpg", ".exr")):
+                            # Skip directories
+                            if os.path.isdir(os.path.join(legacy_dir, filename)):
+                                continue
+                            src_path = os.path.join(legacy_dir, filename)
+                            dst_path = os.path.join(output_dir, filename)
+                            shutil.copy2(src_path, dst_path)
+                    
                     print(f"Copied render files from {legacy_dir} to {output_dir}")
             
             if export_model:
@@ -356,20 +380,24 @@ class Pipeline:
                     else:
                         raise FileNotFoundError(f"Exported NPZ file not found at {output_npz}")
             else:
-                # Check if render outputs were created
-                if os.path.exists(rgb_path):
-                    print(f"✅ Images saved to {output_dir}")
-                    print(f"  RGB: {rgb_path}")
+                # Check if render outputs were created - first in unified location unless legacy is specified
+                output_path = rgb_path if not use_legacy_output else legacy_rgb_path
+                output_dir_path = output_dir if not use_legacy_output else os.path.dirname(legacy_rgb_path)
+                
+                if os.path.exists(output_path):
+                    print(f"✅ Images saved to {output_dir_path}")
+                    print(f"  RGB: {output_path}")
                     return True
                 else:
-                    # Final check for legacy location
-                    if not use_legacy_output:
-                        legacy_rgb_path = os.path.join(NGLOD_PATH, "_results", "render_app", "imgs", exp_name, f"{exp_name}_rgb.png")
-                        if os.path.exists(legacy_rgb_path):
-                            print(f"✅ Images found in legacy location: {os.path.dirname(legacy_rgb_path)}")
-                            return True
+                    # Final fallback check for either location
+                    alt_path = legacy_rgb_path if not use_legacy_output else rgb_path
+                    if os.path.exists(alt_path):
+                        alt_dir = os.path.dirname(alt_path)
+                        print(f"✅ Images found in alternate location: {alt_dir}")
+                        return True
                     
-                    raise FileNotFoundError(f"Render output not found at {rgb_path}")
+                    # No renders found anywhere
+                    raise FileNotFoundError(f"Render output not found at {output_path} or alternate location")
             
         except Exception as e:
             print(f"❌ Rendering failed: {e}")
@@ -575,7 +603,9 @@ class Pipeline:
                 lod=args.lod,
                 feature_dim=args.feature_dim,
                 export_model=args.export_model,
-                use_legacy_output=args.use_legacy_output
+                use_legacy_output=args.use_legacy_output,
+                camera_view=args.camera_view,
+                custom_camera_origin=args.custom_camera_origin
             )
             if not success:
                 print("❌ Failed to render model.")

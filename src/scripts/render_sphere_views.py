@@ -27,6 +27,10 @@ def main():
     parser.add_argument('--net', default='OctreeSDF', help='Network architecture (OctreeSDF, etc.)')
     parser.add_argument('--feature-dim', type=int, default=32, help='Feature dimension used in training (default: 32)')
     parser.add_argument('--num-lods', type=int, default=5, help='Number of LODs used in training (default: 5)')
+    parser.add_argument('--camera-view', choices=['front', 'top', 'side', 'diagonal', 'custom'], default='diagonal', 
+                       help='Starting camera view perspective (diagonal is default for better object visibility)')
+    parser.add_argument('--custom-camera-origin', type=float, nargs=3, default=None, 
+                       help='Custom camera origin as 3 float values (x, y, z)')
     args = parser.parse_args()
     
     # Generate video
@@ -41,7 +45,9 @@ def main():
         net=args.net,
         feature_dim=args.feature_dim,
         num_lods=args.num_lods,
-        use_legacy_output=args.use_legacy_output
+        use_legacy_output=args.use_legacy_output,
+        camera_view=args.camera_view,
+        custom_camera_origin=args.custom_camera_origin
     )
     
     return 0 if success else 1

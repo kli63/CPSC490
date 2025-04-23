@@ -78,7 +78,7 @@ The pipeline script provides a complete end-to-end workflow:
 ./src/scripts/shapegen.py --skip-generate --input-obj model.obj --exp-name my_model --skip-render
 
 # Only render trained model
-./src/scripts/shapegen.py --skip-generate --skip-train --existing-model _results/models/my_model.pth
+./src/scripts/shapegen.py --skip-generate --skip-train --existing-model _results/models/my_model.pth --exp-name model_name
 ```
 
 ## Component Usage
@@ -146,6 +146,15 @@ Create videos of 3D models from different viewpoints:
 
 # Change output location
 ./src/scripts/render_video.py _results/models/my_model.pth --output-dir custom_videos
+
+# Change camera view perspective
+./src/scripts/render_video.py _results/models/my_model.pth --camera-view diagonal   # Diagonal view (default, 3/4 view)
+./src/scripts/render_video.py _results/models/my_model.pth --camera-view front      # Front view (z-axis)
+./src/scripts/render_video.py _results/models/my_model.pth --camera-view top        # Top-down view (y-axis)
+./src/scripts/render_video.py _results/models/my_model.pth --camera-view side       # Side view (x-axis)
+
+# Use custom camera position
+./src/scripts/render_video.py _results/models/my_model.pth --camera-view custom --custom-camera-origin 3.0 2.0 1.0
 ```
 
 ## Testing
@@ -224,6 +233,8 @@ python rtx_render_test.py
 - `--render-height INT`: Render height (default: 720)
 - `--shading-mode STRING`: Shading mode (default: "matcap")
 - `--lod INT`: Specific LOD level to render (default: 4)
+- `--camera-view {diagonal,front,top,side,custom}`: Camera view perspective (default: "diagonal")
+- `--custom-camera-origin X Y Z`: Custom camera origin as 3 float values
 - `--export-model`: Export model to NPZ format
 
 ### Video Generation: src/scripts/render_video.py
@@ -242,6 +253,8 @@ python rtx_render_test.py
 - `--rotation {y,x,z}`: Axis to rotate around (default: "y")
 - `--cam-radius FLOAT`: Camera distance from object (default: 4.0)
 - `--temp-dir PATH`: Temporary directory for frames (default: "_temp_render")
+- `--camera-view {diagonal,front,top,side,custom}`: Camera view perspective (default: "diagonal")
+- `--custom-camera-origin X Y Z`: Custom camera origin as 3 float values
 
 #### Network Options:
 - `--net STRING`: Network architecture (default: "OctreeSDF")
@@ -263,6 +276,8 @@ python rtx_render_test.py
 - `--fps INT`: Frames per second in output video (default: 30)
 - `--cam-radius FLOAT`: Camera distance from object (default: 4.0)
 - `--temp-dir PATH`: Temporary directory for frames (default: "_temp_render")
+- `--camera-view {diagonal,front,top,side,custom}`: Starting camera view (default: "diagonal")
+- `--custom-camera-origin X Y Z`: Custom camera origin as 3 float values
 
 #### Network Options:
 - `--net STRING`: Network architecture (default: "OctreeSDF")

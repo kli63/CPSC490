@@ -55,6 +55,9 @@ _results/
 nglod/sdf-net/_results/
 output/
 
+# Paper directory (for now)
+paper/
+
 # Model cache
 shap_e_model_cache/
 
